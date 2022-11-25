@@ -52,6 +52,10 @@ void send_measurements(const measurement_t* meas_ptr, unsigned meas_num)
 
     for (unsigned i = 0; i < meas_num; i++)
     {
+      Serial.print(meas_ptr[i].sensor);
+      Serial.print(": ");
+      Serial.print(meas_ptr[i].value);
+      Serial.println(meas_ptr[i].unit);
       udp.write((const uint8_t*)(meas_ptr + i), sizeof(meas_ptr[i]));
     }
     udp.endPacket();
@@ -64,6 +68,8 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
   Serial.println("Weatherman");
+
+  Wire.begin();
 }
 
 void loop() {
@@ -82,12 +88,31 @@ void loop() {
   measurement_t measurements[] = { &humidity, &temperature };
 
   Serial.println("Polling devices");
-  AM2320::get_humidity_per(&humidity.value);
-  AM2320::get_temp_c(&temperature.value);
+
+  Serial.print("Polling humidity: ");
+  if(AM2320::get_humidity_per(&humidity.value))
+  {
+    Serial.println("OK");
+  }
+  else
+  {
+    Serial.println("FAIL");
+  }
+
+  Serial.print("Polling temperature: ");
+  if(AM2320::get_temp_c(&temperature.value))
+  {
+    Serial.println("OK");
+  }
+  else
+  {
+    Serial.println("FAIL");
+  }
 
   send_measurements(measurements, sizeof(measurements) / sizeof(measurement_t));
 
   // TODO: determine if we can switch into a low power state here.
   Serial.println("Sleeping");
+  Serial.println("-------------");
   delay(6000);
 }
