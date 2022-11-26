@@ -2,7 +2,7 @@
 
 namespace AM2320
 {
-  const uint8_t addr = 0xB8;
+  const uint8_t addr = 0x5C;
 
   static size_t read_reg(uint8_t reg, uint8_t* dst, uint8_t num)
   {
@@ -13,23 +13,44 @@ namespace AM2320
     Wire.write(num); // which is 1 byte
     Wire.endTransmission(true); // send STOP 
 
-    auto bytes = Wire.requestFrom(addr, num); // request the 1 byte for the id and stop
+    // auto bytes = Wire.requestFrom(addr, num); // request the 1 byte for the id and stop
+
+    auto reply_code = Wire.read();
+    auto bytes = Wire.read();
+    
+
+    // if (bytes != num) { return bytes; }
 
     for (unsigned i = 0; i < bytes; i++)
     {
       dst[i] = Wire.read();
     }
 
+    uint8_t crc[2] = { Wire.read(), Wire.read() };
+
     return bytes;
   }
 
   static bool get_temp_c(float* temp_c)
   {
-    uint16_t temp = 0;
+    uint16_t temp = 1;
     auto exp_size = sizeof(temp);
     if (exp_size != read_reg(0x02, (char*)&temp, exp_size)) { return false; }
 
-    *temp_c = temp / 10.0;
+    Serial.println(temp);
+
+    if (temp == 0xFFFF)
+      return false;
+
+    if (temp & 0x8000)
+    {
+      *temp_c = -(int16_t)(temp & 0x7fff);
+    } else 
+    {
+      *temp_c = (int16_t)temp;
+    }
+
+    *temp_c /= 10.0;
 
     return true;
   }
