@@ -42,11 +42,17 @@ void send_measurements(const measurement_t** meas_ptr, unsigned meas_num)
 
   { // send here
     WiFiUDP udp;
+    udp.begin(WEATHERMAN_PORT);
 
-    Serial.print("Sending packet to: ");
-    Serial.println(WiFi.gatewayIP());
+    // Serial.print("Sending packet to: ");
+    // Serial.println(WiFi.gatewayIP());
+    auto dest_addr = IPAddress(192, 168, 1, 105);
+    // auto dest_addr = WiFi.gatewayIP();
 
-    udp.beginPacket(IPAddress(192, 168, 1, 118), WEATHERMAN_PORT);
+    if (0 == udp.beginPacket(dest_addr, WEATHERMAN_PORT))
+    {
+      Serial.println("problem with the supplied IP address or port");
+    }
 
     header_t hdr = {
       .rssi = WiFi.RSSI(),
@@ -64,10 +70,14 @@ void send_measurements(const measurement_t** meas_ptr, unsigned meas_num)
       Serial.println();
       udp.write((const uint8_t*)(meas_ptr[i]), sizeof(measurement_t));
     }
-    udp.endPacket();
-    delay(1000);
+    if (0 == udp.endPacket())
+    {
+      Serial.println("Error sending packet");
+    }
+    delay(6000);
   }
 
+  udp.stop();
   WiFi.end();
 };
 
