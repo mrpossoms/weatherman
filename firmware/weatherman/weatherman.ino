@@ -2,15 +2,49 @@
 #include <WiFiUdp.h>
 #include <avr/power.h>
 
+#include <avr/sleep.h>
+#include <avr/wdt.h>
+#include <avr/power.h>
+#include <avr/interrupt.h>
+
 #include "Adafruit_Sensor.h"
 #include "Adafruit_AM2320.h"
 
 #include "AM2320.h"
 
+#define sleep_bod_disable() 										\
+do { 																\
+  unsigned char tempreg; 													\
+  __asm__ __volatile__("in %[tempreg], %[mcucr]" "\n\t" 			\
+                       "ori %[tempreg], %[bods_bodse]" "\n\t" 		\
+                       "out %[mcucr], %[tempreg]" "\n\t" 			\
+                       "andi %[tempreg], %[not_bodse]" "\n\t" 		\
+                       "out %[mcucr], %[tempreg]" 					\
+                       : [tempreg] "=&d" (tempreg) 					\
+                       : [mcucr] "I" _SFR_IO_ADDR(MCUCR), 			\
+                         [bods_bodse] "i" (_BV(BODS) | _BV(BODSE)), \
+                         [not_bodse] "i" (~_BV(BODSE))); 			\
+} while (0)
+
 const char SSID[] = "PossomsHouse";
 const char PASS[] = "519sierra";
 
 const uint16_t WEATHERMAN_PORT = 31337;
+
+enum period_t
+{
+	SLEEP_15MS,
+	SLEEP_30MS,
+	SLEEP_60MS,
+	SLEEP_120MS,
+	SLEEP_250MS,
+	SLEEP_500MS,
+	SLEEP_1S,
+	SLEEP_2S,
+	SLEEP_4S,
+	SLEEP_8S,
+	SLEEP_FOREVER
+};
 
 struct header_t {
   int32_t rssi;
@@ -74,15 +108,21 @@ void send_measurements(const measurement_t** meas_ptr, unsigned meas_num)
     {
       Serial.println("Error sending packet");
     }
-    delay(6000);
+    udp.stop();
+    WiFi.end();
   }
-
-  udp.stop();
-  WiFi.end();
 };
 
 void setup() {
   // put your setup code here, to run once:
+ 
+  // disable ADC
+  ADCSRA &= ~(1 << ADEN);
+  power_adc_disable();
+
+  // disable brown out detect
+  sleep_bod_disable();
+
   Serial.begin(9600);
   Serial.println("Weatherman");
   am2320.begin();
@@ -112,5 +152,17 @@ void loop() {
   // TODO: determine if we can switch into a low power state here.
   Serial.println("Sleeping");
   Serial.println("-------------");
-  delay(6000);
+
+  // shutdown bus controllers
+  power_spi_disable();
+  power_twi_disable();
+  power_usart0_disable();
+
+  // Power down and sleep
+  wdt_enable(SLEEP_8S);
+  WDTCSR |= (1 << WDIE);
+
+  power_spi_enable();
+  power_twi_enable();
+  power_usart0_enable();
 }
