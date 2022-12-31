@@ -5,6 +5,7 @@
 
 #include <errno.h>
 #include <sys/select.h>
+#include <sys/signal.h>
 #include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -16,17 +17,30 @@
 
 #include "../firmware/weatherman/protocol.h"
 
-typedef struct {
+struct 
+{
 	int running;
 	int sock;
-} state_t;
+} state;
 
 struct
 {
 	char* log_file_path;
 } CONF;
 
+
 #define ARR_LEN(a) (sizeof(a) / sizeof(a[0]))
+
+void sig_handler(int sig)
+{
+	switch(sig)
+	{
+		case SIGTERM:
+			state.running = 0;
+			break;
+		
+	}
+}
 
 int socket_init(unsigned short port)
 {
@@ -172,30 +186,21 @@ void log_measurements(int sock)
 
 		for (unsigned i = 2; i < ARR_LEN(measurements); i++)
 		{
-			//if (NULL == measurements[i]) { continue; }
 			write_col_d(log_fd, measurements[i]->value);
 		}
 
 		write(log_fd, "\n", 1);
 
-		// for (unsigned i = 0; i < sizeof(meas_map) / sizeof(char*); i++)
-		// {
-		// 	if (!meas_map[i]) { continue; }
-
-		// 	for (unsigned j = 0; j < hdr->measurement_count; j++)
-		// 	{
-
-		// 	}
-		// }
+		close(log_fd);
 	}
 }
 
 int main(int argc, const char* argv[])
 {
-	state_t state = {
-		.running = 1,
-		.sock = socket_init(31337)
-	};
+	signal(SIGTERM, sig_handler);
+
+	state.running = 1;
+	state.sock = socket_init(31337);
 
 	CONF.log_file_path = "/var/weatherman";
 
@@ -207,10 +212,12 @@ int main(int argc, const char* argv[])
 
 		if (select(state.sock + 1, &rfds, NULL, NULL, NULL) > 0)
 		{
-			printf("selected\n");
 			log_measurements(state.sock);
 		}
 	}
+
+	close(state.sock);
+	printf("shutdown\n");
 
 	return 0;
 }
