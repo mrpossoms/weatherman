@@ -158,6 +158,6 @@ void loop() {
   Serial.println("-------------");
   Serial.flush();
 
-  //LowPower.powerDown(SLEEP_1S, ADC_OFF, BOD_OFF);
-  delay(1000);
+  for (unsigned i = 0; i < 10; i++)  
+  LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
 }
