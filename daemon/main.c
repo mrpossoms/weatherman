@@ -172,6 +172,7 @@ void log_measurements(int sock)
 
 		for (unsigned i = 2; i < ARR_LEN(measurements); i++)
 		{
+			//if (NULL == measurements[i]) { continue; }
 			write_col_d(log_fd, measurements[i]->value);
 		}
 
