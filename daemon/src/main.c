@@ -15,7 +15,7 @@
 #include <arpa/inet.h>
 
 
-#include "../firmware/weatherman/protocol.h"
+#include "../../firmware/weatherman/protocol.h"
 
 struct 
 {

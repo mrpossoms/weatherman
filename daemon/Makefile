@@ -1,4 +1,4 @@
-weatherd: main.c
+weatherd: src/main.c
 	$(CC) -g $< -o $@
 
 .PHONY: install
