@@ -1,11 +1,11 @@
 #ifndef WM_RENDERER
 #define WM_RENDERER
 
+typedef struct
+{
+	const char* key;
+	const char* value;
+} key_value_t;
 
-const char* html(const char* c, ...);
-const char* head(const char* c, ...);
-
-const char* body(const char* c, ...);
-const char* tag(const char* tag, const char* c, ...);
-
+char* view(const key_value_t* kvps);
 #endif

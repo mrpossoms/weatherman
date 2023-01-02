@@ -1,7 +1,7 @@
 location: gitman_sources
 sources:
-  - repo: https://github.com/githubtraining/hellogitworld
-    name: sample_dependency
+  - repo: git@github.com:davidmoreno/onion.git
+    name: onion
     rev: master
     type: git
     params:
@@ -10,19 +10,7 @@ sources:
     links:
       -
     scripts:
-      -
-sources_locked:
-  - repo: https://github.com/githubtraining/hellogitworld
-    name: sample_dependency
-    rev: ebbbf773431ba07510251bb03f9525c7bab2b13a
-    type: git
-    params:
-    sparse_paths:
-      -
-    links:
-      -
-    scripts:
-      -
+      - mkdir build && cd build && cmake .. && make -j4
 default_group: ''
 groups:
   -

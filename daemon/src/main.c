@@ -16,6 +16,7 @@
 
 
 #include "../../firmware/weatherman/protocol.h"
+#include "html.h"
 
 struct 
 {
@@ -203,6 +204,15 @@ int main(int argc, const char* argv[])
 	state.sock = socket_init(31337);
 
 	CONF.log_file_path = "/var/weatherman";
+
+	key_value_t kvps[] = {
+		{
+			.key = "TEMP",
+			.value = "30"
+		}
+	};
+
+	view(kvps);
 
 	while (state.running)
 	{
